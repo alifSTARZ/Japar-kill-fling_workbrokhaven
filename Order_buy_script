@@ -31,10 +31,225 @@ local function notif(text, duration)
 end
 
 -- GUI Setup
-local playerGui = lp:WaitForChild("PlayerGui")
-local gui = Instance.new("ScreenGui", playerGui)
+local gui = Instance.new("ScreenGui")
 gui.Name = "Japar - kill fling ☠️"
 gui.ResetOnSpawn = false
+gui.Parent = game:GetService("CoreGui")
+gui.IgnoreGuiInset = true
+
+-- Main Panel
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 0, 0, 0) -- start from 0 size for animation
+main.Position = UDim2.new(0.5, 0, 0.5, 0) -- center screen
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+local mainUICorner = Instance.new("UICorner", main)
+mainUICorner.CornerRadius = UDim.new(0, 14)
+
+-- Gradient Background
+local gradient = Instance.new("UIGradient", main)
+gradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 60)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25))
+}
+gradient.Rotation = 90
+
+-- Shadow
+local shadow = Instance.new("UIStroke", main)
+shadow.Color = Color3.new(0, 0, 0)
+shadow.Thickness = 8
+shadow.Transparency = 0.9
+shadow.LineJoinMode = Enum.LineJoinMode.Round
+
+-- Dragging vars
+local dragging = false
+local dragInput, dragStart, startPos
+local function update(input)
+	local delta = input.Position - dragStart
+	local goal = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	TweenService:Create(main, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Position = goal}):Play()
+end
+
+main.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = main.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+main.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
+end)
+
+-- Title Bar
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, -50, 0, 40)
+title.Position = UDim2.new(0, 20, 0, 8)
+title.Text = "Japar - kill fling ☠️"
+title.TextColor3 = Color3.fromRGB(230, 230, 255)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 16
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextStrokeColor3 = Color3.fromRGB(70, 70, 90)
+title.TextStrokeTransparency = 0.5
+
+-- Close Button
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0, 28, 0, 28)
+close.Position = UDim2.new(1, -40, 0, 8)
+close.Text = "X"
+close.TextColor3 = Color3.fromRGB(255, 70, 70)
+close.BackgroundColor3 = Color3.fromRGB(30, 15, 15)
+close.Font = Enum.Font.GothamBlack
+close.TextSize = 22
+close.AutoButtonColor = false
+Instance.new("UICorner", close).CornerRadius = UDim.new(0, 12)
+
+local closeGlow = Instance.new("UIStroke", close)
+closeGlow.Color = Color3.fromRGB(255, 80, 80)
+closeGlow.Thickness = 1.8
+closeGlow.Transparency = 0.4
+
+close.MouseEnter:Connect(function()
+	TweenService:Create(close, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 20, 20)}):Play()
+	TweenService:Create(closeGlow, TweenInfo.new(0.2), {Transparency = 0}):Play()
+end)
+close.MouseLeave:Connect(function()
+	TweenService:Create(close, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 15, 15)}):Play()
+	TweenService:Create(closeGlow, TweenInfo.new(0.2), {Transparency = 0.4}):Play()
+end)
+
+close.MouseButton1Click:Connect(function()
+	TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 0, 0, 0),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+	}):Play()
+	wait(0.3)
+	gui:Destroy()
+end)
+
+-- Input Field
+local input = Instance.new("TextBox", main)
+input.PlaceholderText = "Enter username or display name"
+input.Size = UDim2.new(1, -40, 0, 45)
+input.Position = UDim2.new(0, 20, 0, 60)
+input.BackgroundColor3 = Color3.fromRGB(40, 50, 60)
+input.TextColor3 = Color3.fromRGB(230, 230, 230)
+input.PlaceholderColor3 = Color3.fromRGB(140, 140, 160)
+input.Font = Enum.Font.Gotham
+input.TextScaled = true
+input.Text = ""
+input.BorderSizePixel = 0
+Instance.new("UICorner", input).CornerRadius = UDim.new(0, 10)
+
+local inputGlow = Instance.new("UIStroke", input)
+inputGlow.Color = Color3.fromRGB(90, 110, 150)
+inputGlow.Thickness = 1.5
+inputGlow.Transparency = 0.6
+
+input.Focused:Connect(function()
+	TweenService:Create(inputGlow, TweenInfo.new(0.25), {Color = Color3.fromRGB(120, 160, 255), Transparency = 0}):Play()
+end)
+
+input.FocusLost:Connect(function()
+	TweenService:Create(inputGlow, TweenInfo.new(0.25), {Color = Color3.fromRGB(90, 110, 150), Transparency = 0.6}):Play()
+end)
+
+-- Action Button
+local button = Instance.new("TextButton", main)
+button.Size = UDim2.new(1, -40, 0, 50)
+button.Position = UDim2.new(0, 20, 0, 115)
+button.Text = "💥 Fling"
+button.BackgroundColor3 = Color3.fromRGB(80, 130, 255)
+button.TextColor3 = Color3.new(1, 1, 1)
+button.Font = Enum.Font.GothamBlack
+button.TextScaled = true
+button.BorderSizePixel = 0
+Instance.new("UICorner", button).CornerRadius = UDim.new(0, 12)
+
+local buttonGlow = Instance.new("UIStroke", button)
+buttonGlow.Color = Color3.fromRGB(120, 170, 255)
+buttonGlow.Thickness = 2
+buttonGlow.Transparency = 0.4
+
+button.MouseEnter:Connect(function()
+	TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(110, 160, 255)}):Play()
+	TweenService:Create(buttonGlow, TweenInfo.new(0.15), {Transparency = 0}):Play()
+end)
+
+button.MouseLeave:Connect(function()
+	TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(80, 130, 255)}):Play()
+	TweenService:Create(buttonGlow, TweenInfo.new(0.15), {Transparency = 0.4}):Play()
+end)
+
+-- Fling action
+button.MouseButton1Click:Connect(function()
+	local Target = gplr(input.Text)
+	if Target[1] then
+		Target = Target[1]
+		if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") then
+			notif("Your character is not loaded!", 3)
+			return
+		end
+		if not Target.Character or not Target.Character:FindFirstChild("HumanoidRootPart") then
+			notif("Target character not found!", 3)
+			return
+		end
+
+		local oldThrust = lp.Character.HumanoidRootPart:FindFirstChild("FlingForce")
+		if oldThrust then
+			oldThrust:Destroy()
+		end
+
+		local thrust = Instance.new("BodyThrust")
+		thrust.Force = Vector3.new(9999, 9999, 9999)
+		thrust.Name = "FlingForce"
+		thrust.Parent = lp.Character.HumanoidRootPart
+
+		coroutine.wrap(function()
+			while lp.Character and Target.Character and lp.Character:FindFirstChild("HumanoidRootPart") and Target.Character:FindFirstChild("HumanoidRootPart") do
+				local hrp = lp.Character.HumanoidRootPart
+				local tHrp = Target.Character.HumanoidRootPart
+				hrp.CFrame = tHrp.CFrame
+				thrust.Location = tHrp.Position
+				RunService.Heartbeat:Wait()
+			end
+			if thrust and thrust.Parent then
+				thrust:Destroy()
+			end
+		end)()
+
+		notif("Flinging "..Target.DisplayName.."!", 4)
+	else
+		notif("Player not found!", 2)
+	end
+end)
+
+-- Animasi buka GUI
+TweenService:Create(main, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	Size = UDim2.new(0, 260, 0, 180),
+	Position = UDim2.new(0.35, 0, 0.3, 0),
+	BackgroundTransparency = 0,
+}):Play()gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 
 -- Main Panel
